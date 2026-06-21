@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هوش مصنوعی سُها | نسل جدید دستیار هوشمند</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        skyblue: '#00a2ff',
+                        iceberg: '#e0f2fe',
+                        darktech: '#040d1a',
+                    },
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #040c18; 
+            color: #ffffff;
+            font-family: 'Vazirmatn', sans-serif;
+            overflow-x: hidden;
+            scrollbar-width: none; 
+        }
+        body::-webkit-scrollbar { display: none; }
+
+        #webgl-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+        }
+
+        .blue-glow {
+            text-shadow: 0 0 40px rgba(0, 162, 255, 0.6), 0 0 80px rgba(255, 255, 255, 0.3);
+        }
+
+        .glass-header {
+            background: rgba(4, 12, 24, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 162, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 162, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 162, 255, 0.05);
+            transition: all 0.4s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 20px 50px rgba(0, 162, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        #loader {
+            position: fixed; inset: 0; background: #040d1a; z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .ai-pulse {
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(0,162,255,1) 0%, rgba(4,13,26,0) 70%);
+            animation: pulse 2s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.6); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        section {
+            min-height: 120vh;
+            display: flex; flex-direction: column; justify-content: center;
+            position: relative; padding: 0 10vw;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="ai-pulse"></div>
+        <h2 class="text-white tracking-widest text-lg font-light mt-4 opacity-80" id="loader-text">S O H A . A I</h2>
+    </div>
+
+    <header class="fixed top-0 left-0 w-full z-50 glass-header px-6 py-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-3 h-3 bg-skyblue rounded-full animate-ping"></div>
+                <span class="text-2xl font-black tracking-wider text-white">سُـــها</span>
+            </div>
+            <nav class="hidden md:flex items-center space-x-10 space-x-reverse text-sm font-medium text-gray-300">
+                <a href="#hero" class="hover:text-skyblue transition-colors">صفحه اصلی</a>
+                <a href="#features" class="hover:text-skyblue transition-colors">ویژگی‌ها</a>
+                <a href="#about" class="hover:text-skyblue transition-colors">تکنولوژی</a>
+            </nav>
+            <div>
+                <a href="https://web.bale.ai/chat?uid=740198679" class="px-6 py-2.5 rounded-full bg-white text-darktech font-bold text-sm hover:bg-skyblue hover:text-white transition-all duration-300 shadow-lg shadow-white/5 hover:shadow-skyblue/30">
+                    ورود به ربات بله
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <main class="relative z-10 w-full">
+
+        <section id="hero" class="items-center text-center !min-h-[100vh] pt-20">
+            <h1 class="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-gray-500 blue-glow hero-elem opacity-0">
+                سُـــها
+            </h1>
+            <p class="mt-6 text-xl md:text-3xl text-skyblue font-light tracking-wide hero-elem opacity-0">
+                پرچم‌دار در سرعت، کیفیت و قدرت
+            </p>
+            <p class="mt-4 text-sm md:text-base text-gray-400 max-w-xl mx-auto hero-elem opacity-0 leading-relaxed">
+                اولین دستیار هوش مصنوعی توسعه‌یافته بر بستر پلتفرم بله. مرزهای هوشمندی و خلاقیت را در دستان خود لمس کنید.
+            </p>
+            <div class="mt-12 w-[1px] h-24 bg-gradient-to-b from-skyblue to-transparent mx-auto hero-elem opacity-0"></div>
+        </section>
+
+        <section id="features" class="py-20">
+            <div class="max-w-6xl mx-auto w-full">
+                <h2 class="text-4xl md:text-6xl font-black mb-16 text-right text-white gs-reveal">مثلث قدرت سها</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass-card p-10 rounded-3xl gs-card">
+                        <div class="w-12 h-12 rounded-2xl bg-skyblue/10 border border-skyblue/30 flex items-center justify-center mb-8">
+                            <svg class="w-6 h-6 text-skyblue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-white">سرعت بی‌رقیب</h3>
+                        <p class="text-gray-400 leading-relaxed">پردازش در صدم ثانیه. سها با بهینه‌ترین کدهای ماتریسی، پاسخ‌های شما را بدون معطلی و در لحظه آماده می‌کند.</p>
+                    </div>
+
+                    <div class="glass-card p-10 rounded-3xl gs-card">
+                        <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/30 flex items-center justify-center mb-8">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-skyblue">کیفیت تراز اول</h3>
+                        <p class="text-gray-400 leading-relaxed">درک دقیق زبان فارسی، لحن‌شناسی و تولید محتوای غنی. سها فراتر از یک ربات، مانند یک متخصص در کنار شماست.</p>
+                    </div>
+
+                    <div class="glass-card p-10 rounded-3xl gs-card">
+                        <div class="w-12 h-12 rounded-2xl bg-skyblue/10 border border-skyblue/30 flex items-center justify-center mb-8">
+                            <svg class="w-6 h-6 text-skyblue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-white">قدرت بی‌انتها</h3>
+                        <p class="text-gray-400 leading-relaxed">متصل به بزرگ‌ترین الگوهای زبانی جهان. از برنامه‌نویسی و تحلیل داده تا تولید تصاویر و ترجمه، همه‌چیز در بله ممکن است.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="items-end text-right">
+            <div class="max-w-3xl glass-card p-12 md:p-20 rounded-3xl border-r-4 border-skyblue relative overflow-hidden">
+                <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-skyblue/10 rounded-full blur-[80px]"></div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white gs-reveal">ادغام هوشمند در اپلیکیشن بله</h2>
+                <p class="text-xl leading-loose text-gray-300 font-light gs-reveal">
+                    برای استفاده از پیچیده‌ترین هوش مصنوعی دنیا، نیاز به نصب هیچ نرم‌افزار اضافی یا عبور از سدهای تحریم ندارید. سها مستقیماً درون پیام‌رسان بله متولد شده است تا با رابط کاربری روان، سرعت فوق‌العاده و دسترسی آسان، کارهای روزمره‌تان را دگرگون کند.
+                </p>
+            </div>
+        </section>
+
+        <sectsion id="cta" class="items-center text-center">
+            <h2 class="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-t from-gray-500 via-white to-white gs-scale">
+                آینده، همین حالا
+            </h2>
+            <p class="mt-6 text-xl text-gray-400 max-w-md mx-auto gs-scale">به هزاران کاربری که با سها بهره‌وری خود را چند برابر کرده‌اند بپیوندید.</p>
+            <div class="mt-12 relative group cursor-pointer gs-scale">
+                <div class="absolute inset-0 bg-skyblue blur-2xl opacity-30 group-hover:opacity-70 transition duration-700 rounded-full"></div>
+                <a href="/chat.html" class="relative inline-block px-14 py-5 bg-white text-darktech font-black text-xl rounded-full hover:bg-skyblue hover:text-white transition-all duration-500 shadow-xl">
+                    شروع گفتگو با سُها
+                </a>
+            </div>
+        </section>
+
+        <footer class="py-8 text-center border-t border-white/5 text-gray-600 text-xs tracking-widest">
+            © 2026 هوش مصنوعی سها | تمامی حقوق محفوظ است. توسعه یافته برای پلتفرم بله.
+        </footer>
+
+    </main>
+
+    <script>
+        const lenis = new Lenis({
+            duration: 1.4,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smooth: true,
+            mouseMultiplier: 1,
+        });
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Sync GSAP with Lenis
+        gsap.registerPlugin(ScrollTrigger);
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+        gsap.ticker.lagSmoothing(0);
+        window.onload = () => {
+            const tl = gsap.timeline();
+            tl.to("#loader-text", { opacity: 0, duration: 0.5 })
+              .to(".ai-pulse", { scale: 0, opacity: 0, duration: 0.5, ease: "power3.in" })
+              .to("#loader", { y: "-100%", duration: 1, ease: "power4.inOut" })
+              .to(".hero-elem", {
+                  y: 0, opacity: 1, duration: 1.2, stagger: 0.2, ease: "power4.out"
+              }, "-=0.3");
+        };
+        const canvas = document.getElementById('webgl-canvas');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const countX = 65;
+        const countY = 65;
+        const numParticles = countX * countY;
+        
+        const positions = new Float32Array(numParticles * 3);
+        const colors = new Float32Array(numParticles * 3);
+
+        const colorSky = new THREE.Color('#00a2ff'); 
+        const colorWhite = new THREE.Color('#ffffff'); 
+
+        let index = 0;
+        for (let x = 0; x < countX; x++) {
+            for (let y = 0; y < countY; y++) {
+                // Center alignment arithmetic
+                positions[index * 3] = x * 1.5 - (countX * 1.5) / 2;     
+                positions[index * 3 + 1] = 0;                            
+                positions[index * 3 + 2] = y * 1.5 - (countY * 1.5) / 2; 
+
+                const mixedColor = colorSky.clone().lerp(colorWhite, (x / countX));
+                colors[index * 3] = mixedColor.r;
+                colors[index * 3 + 1] = mixedColor.g;
+                colors[index * 3 + 2] = mixedColor.b;
+
+                index++;
+            }
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.22,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particleMesh = new THREE.Points(geometry, material);
+        scene.add(particleMesh);
+
+        camera.position.set(0, 35, 55);
+        camera.lookAt(0, 0, 0);
+
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) * 0.03;
+            mouseY = (e.clientY - window.innerHeight / 2) * 0.03;
+        });
+
+        const clock = new THREE.Clock();
+        
+        function animateMesh() {
+            const elapsedTime = clock.getElapsedTime();
+            const positionAttribute = geometry.attributes.position;
+
+            let i = 0;
+            for (let x = 0; x < countX; x++) {
+                for (let y = 0; y < countY; y++) {
+                    const wave1 = Math.sin(x * 0.2 + elapsedTime * 1.5) * 2.5;
+                    const wave2 = Math.cos(y * 0.2 + elapsedTime * 1.2) * 2.5;
+                    
+                    positionAttribute.setY(i, wave1 + wave2);
+                    i++;
+                }
+            }
+            positionAttribute.needsUpdate = true;
+
+            particleMesh.rotation.y = elapsedTime * 0.03;
+
+            camera.position.x += (mouseX - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY + 35 - camera.position.y) * 0.05;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animateMesh);
+        }
+        animateMesh();
+
+
+        gsap.to(particleMesh.rotation, {
+            x: Math.PI / 4,
+            z: Math.PI / 6,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "main",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.5
+            }
+        });
+
+        gsap.to(camera.position, {
+            z: 35,
+            y: 20,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "main",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.5
+            }
+        });
+
+        gsap.utils.toArray('.gs-reveal').forEach(element => {
+            gsap.fromTo(element, 
+                { y: 50, opacity: 0, filter: "blur(10px)" },
+                {
+                    y: 0, opacity: 1, filter: "blur(0px)",
+                    duration: 1, ease: "power3.out",
+                    scrollTrigger: { trigger: element, start: "top 85%" }
+                }
+            );
+        });
+
+        gsap.fromTo('.gs-card', 
+            { y: 80, opacity: 0 },
+            {
+                y: 0, opacity: 1, duration: 1.2, stagger: 0.2, ease: "power4.out",
+                scrollTrigger: { trigger: "#features", start: "top 65%" }
+            }
+        );
+
+        gsap.fromTo('.gs-scale',
+            { scale: 0.9, opacity: 0, filter: "blur(10px)" },
+            {
+                scale: 1, opacity: 1, filter: "blur(0px)", duration: 1, stagger: 0.2,
+                scrollTrigger: { trigger: "#cta", start: "top 75%" }
+            }
+        );
+
+        // Handle Responsive Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Navbar Scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('py-2', 'bg-darktech/80');
+                header.classList.remove('py-4', 'bg-darktech/40');
+            } else {
+                header.classList.add('py-4', 'bg-darktech/40');
+                header.classList.remove('py-2', 'bg-darktech/80');
+            }
+        });
+    </script>
+</body>
+</html>

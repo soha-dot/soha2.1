@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت با سُها | دستیار هوشمند</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        skyblue: '#00a2ff',
+                        iceberg: '#e0f2fe',
+                        darktech: '#040d1a',
+                    },
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #040c18; 
+            color: #ffffff;
+            font-family: 'Vazirmatn', sans-serif;
+            overflow: hidden; 
+        }
+        
+        ::-webkit-scrollbar { display: none; }
+        * { scrollbar-width: none; }
+
+        #webgl-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+        }
+
+        .glass-header {
+            background: rgba(4, 12, 24, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 162, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 162, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 162, 255, 0.05);
+        }
+
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #00a2ff, #0077ff);
+            box-shadow: 0 10px 25px rgba(0, 162, 255, 0.2);
+        }
+
+        #loader {
+            position: fixed; inset: 0; background: #040d1a; z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .ai-pulse {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, rgba(0,162,255,1) 0%, rgba(4,13,26,0) 70%);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.6); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="ai-pulse"></div>
+    </div>
+
+    <header class="fixed top-0 left-0 w-full z-50 glass-header px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-2.5 h-2.5 bg-skyblue rounded-full animate-ping"></div>
+                <span class="text-xl font-black tracking-wider text-white">سُـــها</span>
+            </div>
+            <a href="index.html" class="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                بازگشت
+            </a>
+        </div>
+    </header>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <main class="relative z-10 w-full h-screen flex flex-col pt-20 pb-6 px-4 md:px-10 items-center justify-center">
+        
+        <div class="glass-card w-full max-w-5xl h-full rounded-3xl flex flex-col overflow-hidden opacity-0" id="chat-container">
+            
+            <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
+                
+                <div class="flex items-start gap-3 w-full justify-end">
+                    <div class="glass-card px-5 py-4 rounded-3xl rounded-tl-none max-w-[85%] md:max-w-[70%] text-gray-200 text-sm md:text-base leading-loose font-light">
+                        سلام! من <strong>سُها</strong> هستم. دستیار هوشمند شما. امروز چطور می‌تونم بهت کمک کنم؟
+                    </div>
+                    <div class="w-10 h-10 rounded-2xl bg-skyblue/10 border border-skyblue/30 flex items-center justify-center flex-shrink-0">
+                        <img src="/1781973177850.jpg" alt="">
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 bg-white/5 border-t border-white/10 backdrop-blur-md">
+                <div class="relative flex items-center w-full bg-darktech/60 border border-white/10 rounded-full px-2 py-2 focus-within:border-skyblue/50 transition-colors">
+                    <input type="text" id="user-input" class="w-full bg-transparent text-white px-5 py-2 outline-none placeholder-gray-500 font-light text-sm md:text-base" placeholder="پیام خود را بنویسید..." autocomplete="off">
+                    
+                    <button id="send-btn" class="w-12 h-12 rounded-full bg-skyblue text-white flex items-center justify-center hover:bg-white hover:text-skyblue transition-all duration-300 flex-shrink-0 shadow-lg shadow-skyblue/20 hover:shadow-white/30 hover:scale-105">
+                        <svg class="w-5 h-5 transform -rotate-90 ml-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        /* =========================================
+           1. انیمیشن لودینگ 
+           ========================================= */
+        window.onload = () => {
+            gsap.to("#loader", { opacity: 0, duration: 0.5, delay: 0.3, onComplete: () => {
+                document.getElementById('loader').style.display = 'none';
+                gsap.to("#chat-container", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+            }});
+        };
+
+        /* =========================================
+           2. انیمیشن پس‌زمینه 3D
+           ========================================= */
+        const canvas = document.getElementById('webgl-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const countX = 65;
+        const countY = 65;
+        const numParticles = countX * countY;
+        
+        const positions = new Float32Array(numParticles * 3);
+        const colors = new Float32Array(numParticles * 3);
+
+        const colorSky = new THREE.Color('#00a2ff'); 
+        const colorWhite = new THREE.Color('#ffffff'); 
+
+        let index = 0;
+        for (let x = 0; x < countX; x++) {
+            for (let y = 0; y < countY; y++) {
+                positions[index * 3] = x * 1.5 - (countX * 1.5) / 2;     
+                positions[index * 3 + 1] = 0;                            
+                positions[index * 3 + 2] = y * 1.5 - (countY * 1.5) / 2; 
+
+                const mixedColor = colorSky.clone().lerp(colorWhite, (x / countX));
+                colors[index * 3] = mixedColor.r;
+                colors[index * 3 + 1] = mixedColor.g;
+                colors[index * 3 + 2] = mixedColor.b;
+                index++;
+            }
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.22, vertexColors: true, transparent: true,
+            opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+
+        const particleMesh = new THREE.Points(geometry, material);
+        scene.add(particleMesh);
+
+        camera.position.set(0, 20, 35);
+        particleMesh.rotation.x = Math.PI / 4; 
+        camera.lookAt(0, 0, 0);
+
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) * 0.03;
+            mouseY = (e.clientY - window.innerHeight / 2) * 0.03;
+        });
+
+        const clock = new THREE.Clock();
+        function animateMesh() {
+            const elapsedTime = clock.getElapsedTime();
+            const positionAttribute = geometry.attributes.position;
+
+            let i = 0;
+            for (let x = 0; x < countX; x++) {
+                for (let y = 0; y < countY; y++) {
+                    const wave1 = Math.sin(x * 0.2 + elapsedTime * 1.5) * 2.5;
+                    const wave2 = Math.cos(y * 0.2 + elapsedTime * 1.2) * 2.5;
+                    positionAttribute.setY(i, wave1 + wave2);
+                    i++;
+                }
+            }
+            positionAttribute.needsUpdate = true;
+            particleMesh.rotation.y = elapsedTime * 0.03;
+
+            camera.position.x += (mouseX - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY + 20 - camera.position.y) * 0.05;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animateMesh);
+        }
+        animateMesh();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        /* =========================================
+           3. منطق چت (اصلاح شده برای چیدمان RTL)
+           ========================================= */
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // 👇 اگر از پروکسی استفاده می‌کنی حتما مطمئن شو که مسیر /chat/completions در انتهای لینک باشد 👇
+        const API_KEY = "sk-wyL1vkmWk1A0MBwsodR1E1oKRpLu8YvBR7JQRhv5NN4nOfs6"; 
+        const API_URL = "https://api.gapgpt.app/v1/chat/completions";
+        const MODEL = "gemini-2.5-flash-lite";
+
+        let chatHistory = [
+            { role: "system", content: "تو یک دستیار هوش مصنوعی بسیار باهوش و مودب به نام سها (Soha) هستی. به زبان فارسی روان و با لحنی حرفه‌ای اما صمیمی پاسخ بده." }
+        ];
+
+        const scrollToBottom = () => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        function appendMessage(text, sender) {
+            const isUser = sender === 'user';
+            const msgDiv = document.createElement('div');
+            
+            // رفع باگ: کاربر راست (start) و بات چپ (end)
+            msgDiv.className = `flex items-end gap-3 w-full ${isUser ? 'justify-start' : 'justify-end'}`;
+            
+            const avatarHtml = isUser ? '' : `
+    <img src="1781973177850.jpg" class="w-10 h-10 rounded-2xl object-cover border border-skyblue/30 flex-shrink-0" alt="Soha Logo">
+`;
+            
+            const bubbleClass = isUser 
+                ? 'chat-bubble-user text-white rounded-3xl rounded-tr-none px-5 py-4 max-w-[85%] md:max-w-[70%] text-sm md:text-base leading-loose font-light'
+                : 'glass-card text-gray-200 rounded-3xl rounded-tl-none px-5 py-4 max-w-[85%] md:max-w-[70%] text-sm md:text-base leading-loose font-light';
+
+            const formattedText = text.replace(/\n/g, '<br>');
+
+            // در حالت RTL، اول حباب و بعد آواتار قرار میگیره تا آواتار سمت چپِ حباب بیفته
+            if (isUser) {
+                msgDiv.innerHTML = `<div class="${bubbleClass}">${formattedText}</div>`;
+            } else {
+                msgDiv.innerHTML = `
+                    <div class="${bubbleClass}">${formattedText}</div>
+                    ${avatarHtml}
+                `;
+            }
+            
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+            
+            gsap.fromTo(msgDiv, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" });
+        }
+
+        function showTypingIndicator() {
+    const id = 'typing-' + Date.now();
+    const typingDiv = document.createElement('div');
+    typingDiv.id = id;
+    
+    // کادر اصلی پیام (راست‌چین شده)
+    typingDiv.className = "flex items-end gap-3 w-full justify-end";
+    
+    typingDiv.innerHTML = `
+        <div class="glass-card px-5 py-5 rounded-3xl rounded-tl-none flex items-center gap-1.5">
+            <div class="w-2 h-2 bg-skyblue rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-skyblue rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="w-2 h-2 bg-skyblue rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+        </div>
+        
+        <img src="1781973177850.jpg" class="w-10 h-10 rounded-2xl object-cover border border-skyblue/30 flex-shrink-0" alt="Soha Logo">
+    `;
+    
+    chatBox.appendChild(typingDiv);
+    scrollToBottom();
+    return id;
+}
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            userInput.value = '';
+            chatHistory.push({ role: "user", content: text });
+
+            const typingId = showTypingIndicator();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: chatHistory,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById(typingId).remove();
+
+                if (data.choices && data.choices.length > 0) {
+                    const botReply = data.choices[0].message.content;
+                    appendMessage(botReply, 'bot');
+                    chatHistory.push({ role: "assistant", content: botReply });
+                } else if (data.error) {
+                    appendMessage(`خطای سرور: ${data.error.message}`, 'bot');
+                } else {
+                    appendMessage("متاسفانه در دریافت پاسخ مشکلی پیش آمد.", 'bot');
+                }
+
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                appendMessage("خطا در ارتباط شبکه. لطفا اتصال اینترنت یا آدرس API خود را بررسی کنید.", 'bot');
+                console.error("API Error:", error);
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        setTimeout(() => userInput.focus(), 1000);
+
+    </script>
+</body>
+</html>
